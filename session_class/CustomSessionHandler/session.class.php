@@ -40,6 +40,8 @@ class AppSessionHandler extends SessionHandler
     private $sessionCipherMode = MCRYPT_MODE_ECB;
     private $sessionCipherKey   = 'WYCRYPT0K3Y@2020'; // 16 characters
 
+    private $ttl = 1;
+
     public function __construct()
     {
         // important configurations to make sure they work correctly
@@ -60,6 +62,20 @@ class AppSessionHandler extends SessionHandler
         session_set_save_handler($this, true);
     }
 
+    public function __get($key)
+    {
+        return false !== $_SESSION[$key] ? $_SESSION[$key] : false;
+    }
+    public function __set($key, $value)
+    {
+        $_SESSION[$key] = $value;
+    }
+
+    public function __isset($key)
+    {
+        return isset($_SESSION[$key]) ? true : false;
+    }
+
     public function read($id)
     {
         // decrypt session data 
@@ -75,8 +91,32 @@ class AppSessionHandler extends SessionHandler
     public function start()
     {
         if ('' === session_id()) {
-            return session_start();
+            if (session_start()) {
+                $this->setSessionStartTime();
+            }
         }
+    }
+
+    private function setSessionStartTime()
+    {
+        if (!isset($this->sessionStartTime)) {
+            $this->sessionStartTime = time();
+        }
+        return true;
+    }
+    private function checkSessionValidity()
+    {
+        if ((time() - $this->sessionStartTime) > ($this->ttl * 60)) {
+            $this->renewSession();
+        } else {
+            return true;
+        }
+    }
+
+    private function renewSession()
+    {
+        $this->SessionStartTime = time();
+        return session_regenerate_id(true);
     }
 }
 
@@ -84,4 +124,22 @@ $session = new AppSessionHandler();
 $session->start();
 $_SESSION['msg'] = "this text should be encrypted";
 
-pre($_SESSION); // showed interraly decrypted
+$session->mohammed = "mohammed yahya";
+
+// pre($_SESSION); // showed interraly decrypted
+
+// echo $session->mohammed;
+// echo $session->msg;
+
+
+// if (isset($session->msg)) {
+//     echo "yes, found";
+// } else {
+//     echo "not found";
+// }
+
+// 10800 = +3 hours (Yemen time zone)
+// echo date("H:i:s",  $session->sessionStartTime + 10800);
+
+// change session id every minute
+
