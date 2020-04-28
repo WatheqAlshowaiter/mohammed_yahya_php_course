@@ -1,5 +1,4 @@
 <?php
-
 // for debugging purposes
 function pre($var)
 {
@@ -108,6 +107,7 @@ class AppSessionHandler extends SessionHandler
     {
         if ((time() - $this->sessionStartTime) > ($this->ttl * 60)) {
             $this->renewSession();
+            $this->generateFingerPrint(); 
         } else {
             return true;
         }
@@ -118,13 +118,59 @@ class AppSessionHandler extends SessionHandler
         $this->SessionStartTime = time();
         return session_regenerate_id(true);
     }
+
+    public function kill()
+    {
+        session_unset();
+        setcookie(
+            $this->sessionName,
+            '',
+            time() - 1000,
+            $this->sessionPath,
+            $this->sessionDomain,
+            $this->sessionSSL,
+            $this->sessionHTTPOnly
+        );
+        session_destroy();
+    }
+
+    private function generateFingerPrint()
+    {
+        $userAgentId = $_SERVER['HTTP_USER_AGENT'];
+        $this->cipherKey = mcrypt_create_iv(16);
+        $sessionId = session_id();
+        $this->fingerPrint = md5($userAgentId . $this->cipherKey . $sessionId);
+    }
+
+
+    public function isValidFingerPrint()
+    {
+        if (!isset($this->fingerPrint)) {
+            $this->generateFingerPrint();
+        }
+        $fingerPrint = md5($_SERVER['HTTP_USER_AGENT'] .  $this->cipherKey . session_id());
+        if ($fingerPrint === $this->$fingerPrint) {
+            return true;
+        }
+        return false;
+    }
 }
 
 $session = new AppSessionHandler();
 $session->start();
-$_SESSION['msg'] = "this text should be encrypted";
+// $session->kill();
+// $session->isValidFingerPrint();
+// echo $session->fingerPrint;
+if (!$session->isValidFingerPrint()) {
+    $session->kill();
+}
+// $_SESSION['msg'] = "this text should be encrypted";
 
-$session->mohammed = "mohammed yahya";
+// $session->mohammed = "mohammed yahya";
+
+// $session->kill();
+
+// echo mcrypt_create_iv(32); // rondom ciphered 32 bit
 
 // pre($_SESSION); // showed interraly decrypted
 
@@ -143,3 +189,17 @@ $session->mohammed = "mohammed yahya";
 
 // change session id every minute
 
+
+// to remain the session the same with redirections
+
+//  use relative paths instead of absolute paths
+// use session_write_close() and exit() after header();
+//  like following: 
+
+    // session_write_close();
+    // header("Location: /path-to-go");
+    // exit();
+
+
+// SAPI_Apache_HANDLER = you can track uploading
+// CGI/FASTCGI = you can not track uploading
