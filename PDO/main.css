@@ -20,7 +20,7 @@ div.wrapper div.employees {
 }
 
 form.app-form {
-    width: 500px;
+    width: 400px;
     margin: 20px 50px 0 20px;
 }
 
@@ -82,7 +82,7 @@ form.app-form table tr td {
 }
 
 div.wrapper div.employees table {
-    width: 68 0px;
+    width: 780px;
     margin: 20px 20px 0 0;
     border-collapse: collapse;
 }
@@ -110,4 +110,9 @@ div.wrapper div.employees table tbody td {
 
 div.wrapper div.employees table tbody tr:nth-child(2n) td {
     background: #f1f1f1;
+}
+
+div.wrapper div.employees table tbody td a:link,
+div.wrapper div.employees table tbody td a:visited {
+    color: green;
 }

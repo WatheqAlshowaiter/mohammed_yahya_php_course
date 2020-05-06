@@ -2,20 +2,27 @@
 
 class Employee
 {
-    public $id;
-    public $name;
-    public $age;
-    public $address;
-    public $tax;
-    public $salary;
+    private $id;
+    private $name;
+    private $age;
+    private $address;
+    private $tax;
+    private $salary;
 
-    // public function __construct($name, $age, $tax, $salary)
-    // {
-    //     $this->age = $age;
-    //     $this->name = $name;
-    //     $this->salary = $salary;
-    //     $this->tax = $tax;
-    // }
+
+    public function __construct($name, $age, $address, $tax, $salary)
+    {
+        $this->age = $age;
+        $this->name = $name;
+        $this->salary = $salary;
+        $this->tax = $tax;
+        $this->address = $address;
+    }
+
+    public function __get($prop)
+    {
+        return $this->$prop;
+    }
 
     public function calculateSalary()
     {
