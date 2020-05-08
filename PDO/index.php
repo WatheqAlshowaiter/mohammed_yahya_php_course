@@ -8,8 +8,8 @@ session_start();
 error_reporting(E_ALL); // for development to know all problems in my code
 
 require_once 'db.php';
+require_once 'abstractModel.class.php';
 require_once 'employee.class.php';
-
 
 
 if (isset($_POST['submit'])) {
@@ -20,22 +20,30 @@ if (isset($_POST['submit'])) {
     $salary =  filter_input(INPUT_POST, 'salary', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     $tax =  filter_input(INPUT_POST, 'tax', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 
-    $params = [':name' => $name, ':address' => $address, ':salary' => $salary, ':tax' => $tax, ':age' => $age];
+    // $params = [':name' => $name, ':address' => $address, ':salary' => $salary, ':tax' => $tax, ':age' => $age];
 
     if (isset($_GET['action']) and $_GET['action'] == 'edit' and isset($_GET['id'])) {
+
         $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
-        $sql = 'UPDATE employees SET name = :name, address = :address, salary = :salary, tax = :tax, age = :age WHERE id = :id';
-        $params[':id'] = $id;
+        if ($id > 0) {
+            $user = Employee::getByPK($id);
+            $user->name = $name;
+            $user->address = $address;
+            $user->age = $age;
+            $user->salary = $salary;
+            $user->tax = $tax;
+        }
     } else {
-        $sql = 'INSERT INTO employees SET name = :name, address = :address, salary = :salary, tax = :tax, age = :age';
+        $user = new Employee($name , $age, $address, $tax, $salary);
+        // $sql = 'INSERT INTO employees SET name = :name, address = :address, salary = :salary, tax = :tax, age = :age';
     }
     // Inserting or updating employees
 
-    $stmt = $connection->prepare($sql);
+    // $stmt = $connection->prepare($sql);
 
 
-    if ($stmt->execute($params)) {
-        $_SESSION['message'] = 'Employee <b><i>'  . $name . '</i></b> saved successfully';
+    if ($user->save() === true) {
+        $_SESSION['message'] = 'Employee saved successfully';
         header("Location: index.php");
         session_write_close();
         exit;
@@ -49,25 +57,30 @@ if (isset($_GET['action']) and $_GET['action'] == 'edit' and isset($_GET['id']))
     // echo "you try to edit and employee"; // to make sure
     $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
     if ($id > 0) {
-        $sql = 'SELECT * from employees WHERE id = :id';
-        $result = $connection->prepare($sql);
-        $foundUser = $result->execute([':id' => $id]);
-        if ($foundUser === true) {
-            $user = $result->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'Employee', array('name', 'age', 'address', 'tax', 'salary'));
-            $user = array_shift($user);
-        }
+        $user = Employee::getByPK($id);
+
+        // $sql = 'SELECT * from employees WHERE id = :id';
+        // $result = $connection->prepare($sql);
+        // $foundUser = $result->execute([':id' => $id]);
+        // if ($foundUser === true) {
+        //     $user = $result->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'Employee', array('name', 'age', 'address', 'tax', 'salary'));
+        //     $user = array_shift($user);
+        // }
+
     }
 }
 
-// Update
+// Delete
 if (isset($_GET['action']) and $_GET['action'] == 'delete' and isset($_GET['id'])) {
     // echo "you try to edit and employee"; // to make sure
     $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
     if ($id > 0) {
-        $sql = 'DELETE FROM employees WHERE id = :id';
-        $result = $connection->prepare($sql);
-        $foundUser = $result->execute([':id' => $id]);
-        if ($foundUser === true) {
+        $user = Employee::getByPK($id);
+
+        // $sql = 'DELETE FROM employees WHERE id = :id';
+        // $result = $connection->prepare($sql);
+        // $foundUser = $result->execute([':id' => $id]);
+        if ($user->delete() === true) {
             $_SESSION['message'] = 'Employee has been deleted successfully';
             header("Location: index.php");
             session_write_close();
@@ -77,10 +90,11 @@ if (isset($_GET['action']) and $_GET['action'] == 'delete' and isset($_GET['id']
 }
 
 // Reading from database back
-$sql = "SELECT * from employees";
-$stmt = $connection->query($sql);
-$result = $stmt->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'Employee', array('name', 'age', 'address', 'tax', 'salary'));
-$result = (is_array($result) and !empty($result)) ? $result : false;
+$result = Employee::getAll();
+// $sql = "SELECT * from employees";
+// $stmt = $connection->query($sql);
+// $result = $stmt->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'Employee', array('name', 'age', 'address', 'tax', 'salary'));
+// $result = (is_array($result) and !empty($result)) ? $result : false;
 
 // Helper Functions of pre
 function pre($var)
